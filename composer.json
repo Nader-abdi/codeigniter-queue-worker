@@ -1,5 +1,5 @@
 {
-    "name": "yidas/codeigniter-queue-worker",
+    "name": "inbo/codeigniter-queue-worker",
     "description": "CodeIgniter 3 Queue Worker Management Controller",
     "keywords": ["codeIgniter", "queue", "worker", "listener", "worker-manage"],
     "homepage": "https://github.com/yidas/codeigniter-queue-worker",
