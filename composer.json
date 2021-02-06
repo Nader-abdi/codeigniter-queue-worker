@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "yidas\\queue\\worker\\": "src/"
+            "inbo\\queue\\worker\\": "src/"
         }
     }
 }

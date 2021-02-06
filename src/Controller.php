@@ -1,6 +1,6 @@
 <?php
 
-namespace yidas\queue\worker;
+namespace inbo\queue\worker;
 
 use Exception;
 use MY_Controller;
