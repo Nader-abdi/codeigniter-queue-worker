@@ -33,7 +33,7 @@ class Controller extends MY_Controller
      *
      * @var string
      */
-    public $phpCommand = '/opt/lampp/bin/php';
+    public $phpCommand = 'php';
 
     /**
      * Time interval of listen frequency on idle
@@ -159,7 +159,7 @@ class Controller extends MY_Controller
     {
         // Env check
         if (!$this->_isLinux()) {
-            //die("Error environment: Queue Listener requires Linux OS, you could use `work` or `single` instead.");
+            die("Error environment: Queue Listener requires Linux OS, you could use `work` or `single` instead.");
         }
 
         // Pre-work check
@@ -381,7 +381,7 @@ class Controller extends MY_Controller
 
         // Shared lock flag builder
         $lockFile = sys_get_temp_dir()
-            . "/yidas-codeiginiter-queue-worker_"
+            . "/inbo-codeiginiter-queue-worker_"
             . str_replace('/', '_', $this->router->fetch_directory())
             . get_called_class()
             . '.lock';
