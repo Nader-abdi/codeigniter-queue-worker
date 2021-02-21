@@ -133,6 +133,8 @@ class Controller extends MY_Controller
      */
     protected $_pidStack = [];
 
+    protected $process;
+
     function __construct()
     {
         // CLI only
@@ -304,7 +306,9 @@ class Controller extends MY_Controller
         // Print worker close
         $costSeconds = number_format(microtime(true) - $startTime, 2, '.', '');
         $this->_print("Queue Worker - Close #{$id} (PID: {$pid}) | cost: {$costSeconds}s");
-
+        if (isset($this->process)){
+            proc_close($this->process);
+        }
         return;
     }
 
@@ -510,6 +514,7 @@ class Controller extends MY_Controller
         $this->_pidStack[$workerId] = $pid;
         // Close
         //proc_close($process);
+        $this->process = $process;
 
         // Log
         $time = date("Y-m-d H:i:s");
