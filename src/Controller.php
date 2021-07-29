@@ -26,7 +26,7 @@ class Controller extends MY_Controller
      *
      * @var string
      */
-    public $logPath;
+    public string $logPath;
 
     /**
      * PHP CLI command for current environment
@@ -49,14 +49,14 @@ class Controller extends MY_Controller
      *
      * @var integer Seconds
      */
-    public $workerSleep = 0;
+    public int $workerSleep = 0;
 
     /**
      * Number of max workers
      *
      * @var integer
      */
-    public $workerMaxNum = 4;
+    public int $workerMaxNum = 4;
 
     /**
      * Number of workers at start, less than or equal to $workerMaxNum
@@ -70,14 +70,14 @@ class Controller extends MY_Controller
      *
      * @var integer Seconds
      */
-    public $workerWaitSeconds = 10;
+    public int $workerWaitSeconds = 10;
 
     /**
      * Enable worker health check for listener
      *
      * @var boolean
      */
-    public $workerHeathCheck = true;
+    public bool $workerHeathCheck = true;
 
     /**
      * Time interval of single processes frequency
@@ -141,12 +141,12 @@ class Controller extends MY_Controller
         if (php_sapi_name() != "cli") {
             die('Access denied');
         }
-
+        $this->logPath = '';
         parent::__construct();
 
         // Init constructor hook
         if (method_exists($this, 'init')) {
-            // You may need to set config to prevent any continuous growth usage 
+            // You may need to set config to prevent any continuous growth usage
             // such as `$this->db->save_queries = false;`
             return $this->init();
         }
@@ -499,22 +499,21 @@ class Controller extends MY_Controller
     {
         // Shell command builder
         $cmd = "{$workerCmd}/{$workerId}";
-        $cmd = ($this->logPath) ? "{$cmd} >> {$this->logPath}" : $cmd;
-        $cmd = (!$this->_isLinux()) ? "start " . $cmd : $cmd;
-        $cmd = $cmd." > /dev/null 2>&1";
+        //$cmd = ($this->logPath) ? "{$cmd} >> {$this->logPath}" : $cmd;
+        //$cmd = (!$this->_isLinux()) ? "start " . $cmd : $cmd;
+        $cmd = $cmd."> /dev/null 2>/dev/null &";
         // Process handler
 
-        $process = proc_open("{$cmd} ", self::$_procDescriptorspec, $pipe);
+        $process = (int)shell_exec($cmd);
 
         // Find out worker command's PID
-        $status = proc_get_status($process);
+        //$status = proc_get_status($process);
 
-        $pid = $status['pid'] + 1;
+        $pid = $process + 1;
         // Stack workers
         $this->_pidStack[$workerId] = $pid;
         // Close
         //proc_close($process);
-        $this->process = $process;
 
         // Log
         $time = date("Y-m-d H:i:s");
