@@ -19,7 +19,7 @@ class Controller extends MY_Controller
      *
      * @var boolean
      */
-    public $debug = true;
+    public bool $debug = true;
 
     /**
      * Log file path
@@ -33,14 +33,14 @@ class Controller extends MY_Controller
      *
      * @var string
      */
-    public $phpCommand = 'php';
+    public string $phpCommand = 'php';
 
     /**
      * Time interval of listen frequency on idle
      *
      * @var integer Seconds
      */
-    public $listenerSleep = 3;
+    public int $listenerSleep = 3;
 
     /**
      * Time interval of worker processes frequency
@@ -63,7 +63,7 @@ class Controller extends MY_Controller
      *
      * @var integer
      */
-    public $workerStartNum = 0;
+    public int $workerStartNum = 0;
 
     /**
      * Waiting time between worker started and next worker starting
@@ -84,14 +84,14 @@ class Controller extends MY_Controller
      *
      * @var integer Seconds
      */
-    public $singleSleep = 3;
+    public int $singleSleep = 3;
 
     /**
      * Single process unique lock time for unexpected shutdown
      *
      * @var integer Seconds
      */
-    public $singleLockTimeout = 15;
+    public int $singleLockTimeout = 15;
 
     /**
      * Descriptorspec for proc_open()
@@ -99,7 +99,7 @@ class Controller extends MY_Controller
      * @var array
      * @see http://php.net/manual/en/function.proc-open.php
      */
-    protected static $_procDescriptorspec = [
+    protected static array $_procDescriptorspec = [
         ["pipe", "r"],
         ["pipe", "w"],
         ["pipe", "w"],
@@ -156,6 +156,7 @@ class Controller extends MY_Controller
      * Action for activating a worker listener
      *
      * @return void
+     * @throws \Exception
      */
     public function listen()
     {
@@ -205,7 +206,7 @@ class Controller extends MY_Controller
             sleep(0.1);
 
             // Call customized listener process, assigns works while catching true by callback return
-            $hasEvent = ($this->handleListen($this->_staticListen)) ? true : false;
+            $hasEvent = $this->handleListen($this->_staticListen);
             // Start works if exists
             if ($hasEvent) {
 
@@ -220,7 +221,8 @@ class Controller extends MY_Controller
                         // Execute extra worker numbers
                         for ($i = 1; $i < $this->workerStartNum; $i++) {
                             $workerCount++;
-                            $r = $this->_workerCmd($workerCmd, $this->_staticListen);
+
+                            $this->_workerCmd($workerCmd, $this->_staticListen);
                         }
                     }
                 }
@@ -229,7 +231,7 @@ class Controller extends MY_Controller
                 // Assign works
                 $workerCount++;
                 // Create a worker
-                $r = $this->_workerCmd($workerCmd, $this->_staticListen);
+                $this->_workerCmd($workerCmd, $this->_staticListen);
                 sleep($this->workerWaitSeconds);
                 continue;
             }
@@ -253,7 +255,7 @@ class Controller extends MY_Controller
                         $isAlive = $this->_isPidAlive($pid);
                         if (!$isAlive) {
                             $this->_log("Queue Listener - Worker health check: Missing #{$id} (PID: {$pid})");
-                            $r = $this->_workerCmd($workerCmd, $id);
+                            $this->_workerCmd($workerCmd, $id);
                         }
                     }
                 }
@@ -273,8 +275,9 @@ class Controller extends MY_Controller
      *
      * @param integer $id
      * @return void
+     * @throws \Exception
      */
-    public function work($id = 1)
+    public function work(int $id = 1)
     {
         // Pre-work check
         if (!method_exists($this, 'handleWork'))
@@ -309,7 +312,6 @@ class Controller extends MY_Controller
         if (isset($this->process)){
             proc_close($this->process);
         }
-        return;
     }
 
     /**
@@ -323,7 +325,7 @@ class Controller extends MY_Controller
      * @param string $action
      * @return void
      */
-    public function launch($action = 'listen')
+    public function launch(string $action = 'listen')
     {
         // Env check
         if (!$this->_isLinux()) {
@@ -348,7 +350,7 @@ class Controller extends MY_Controller
         // Find out the process by name
         $psCmd = "ps aux | grep \"{$search}\" | grep -v grep";
         $psInfoCmd = "ps aux | egrep \"PID|{$search}\" | grep -v grep";
-        $exist = (shell_exec($psCmd)) ? true : false;
+        $exist = shell_exec($psCmd);
 
         if ($exist) {
 
@@ -358,12 +360,10 @@ class Controller extends MY_Controller
 
         // Launch by calling command
         $launchCmd = "{$cmd} > {$logPath} &";
-        $result = shell_exec($launchCmd);
-        $result = shell_exec($psCmd);
+        shell_exec($launchCmd);
         $psInfo = shell_exec($psInfoCmd);
         echo "Success to launch process `{$action}`: {$route}.\nCalled command: {$launchCmd}\n------\n{$psInfo}";
 
-        return;
     }
 
     /**
@@ -376,6 +376,7 @@ class Controller extends MY_Controller
      * running.
      *
      * @return void
+     * @throws \Exception
      */
     public function single($force = false)
     {
@@ -431,7 +432,7 @@ class Controller extends MY_Controller
      * @param object $object
      * @return self
      */
-    protected function setStaticListen($object)
+    protected function setStaticListen($object): Controller
     {
         $this->_staticListen = $object;
 
@@ -485,38 +486,33 @@ class Controller extends MY_Controller
             'expires_at' => time() + $this->singleSleep + $this->singleLockTimeout,
         ];
 
-        return file_put_contents($lockFile, json_encode($lockData));
+        file_put_contents($lockFile, json_encode($lockData));
     }
 
     /**
      * Command for creating a worker
      *
      * @param string $workerCmd
-     * @param integer $workerCount
-     * @return string Command result
+     * @param string $workerId
+     * @return bool Command result
      */
-    protected function _workerCmd($workerCmd, $workerId)
+    protected function _workerCmd(string $workerCmd, string $workerId): bool
     {
         // Shell command builder
         $cmd = "{$workerCmd}/{$workerId}";
-        //$cmd = ($this->logPath) ? "{$cmd} >> {$this->logPath}" : $cmd;
-        //$cmd = (!$this->_isLinux()) ? "start " . $cmd : $cmd;
+
         $cmd = $cmd."> /dev/null 2>/dev/null &";
         // Process handler
 
         $process = (int)shell_exec($cmd);
 
-        // Find out worker command's PID
-        //$status = proc_get_status($process);
-
         $pid = $process + 1;
         // Stack workers
         $this->_pidStack[$workerId] = $pid;
         // Close
-        //proc_close($process);
+
 
         // Log
-        $time = date("Y-m-d H:i:s");
         $this->_log("Queue Listener - Dispatch Worker #{$workerId} (PID: {$pid})");
 
         return true;
@@ -529,7 +525,7 @@ class Controller extends MY_Controller
      * @param string Specified log file path
      * @return integer|boolean The number of bytes that were written to the file, or FALSE on failure.
      */
-    protected function _log($textLine, $logPath = null)
+    protected function _log(string $textLine, $logPath = null)
     {
         // Return back to console also
         $this->_print($textLine);
@@ -557,11 +553,11 @@ class Controller extends MY_Controller
      * Format output text line
      *
      * @param string $textLine
-     * @return void
+     * @return string
      */
-    protected function _formatTextLine($textLine)
+    protected function _formatTextLine(string $textLine): string
     {
-        return $textLine = date("Y-m-d H:i:s") . " - {$textLine}" . PHP_EOL;
+        return  date("Y-m-d H:i:s") . " - {$textLine}" . PHP_EOL;
     }
 
     /**
@@ -570,9 +566,9 @@ class Controller extends MY_Controller
      * @param integer Process ID
      * @return boolean
      */
-    protected function _isPidAlive($pid)
+    protected function _isPidAlive($pid): bool
     {
-        return ((function_exists('posix_getpgid') && posix_getpgid($pid)) || file_exists("/proc/{$pid}")) ? true : false;
+        return (function_exists('posix_getpgid') && posix_getpgid($pid)) || file_exists("/proc/{$pid}");
     }
 
     /**
@@ -580,10 +576,10 @@ class Controller extends MY_Controller
      *
      * @return boolean
      */
-    protected function _isLinux()
+    protected function _isLinux(): bool
     {
         // Just make sure that it's not Windows
-        return (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? false : true;
+        return !((strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'));
     }
 
     /**
