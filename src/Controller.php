@@ -303,7 +303,7 @@ class Controller extends MY_Controller
                 sleep($this->workerSleep);
             }
             // Loading insurance
-            sleep(0.1);
+            sleep(1);
         }
 
         // Print worker close
