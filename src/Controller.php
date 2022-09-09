@@ -203,7 +203,7 @@ class Controller extends MY_Controller
         while (true) {
 
             // Loading insurance
-            sleep(0.1);
+            sleep(1);
 
             // Call customized listener process, assigns works while catching true by callback return
             $hasEvent = $this->handleListen($this->_staticListen);
